@@ -108,9 +108,9 @@ public final class BusinessService {
     }
     public void supplier(User actor,String name,String contact,String email,String phone,String address) {
         require(actor,Permission.MANAGE_PURCHASES); String supplier=text(name,255,"Supplier name");
-        if(contact.length()>255 || email.length()>255 || phone.length()>60 || address.length()>1000) throw new IllegalArgumentException("Supplier contact details are too long");
+        if(contact.length()>255 || email.length()>255 || address.length()>1000) throw new IllegalArgumentException("Supplier contact details are too long");
         if(!email.isBlank() && !email.matches("[^\\s@]+@[^\\s@]+\\.[^\\s@]+")) throw new IllegalArgumentException("Enter a valid email address.");
-        if(!phone.isBlank() && !phone.matches("[+0-9() .-]+")) throw new IllegalArgumentException("Phone number may contain digits, spaces, +, parentheses and hyphens.");
+        if(!phone.isBlank() && !phone.matches("[0-9]{10}")) throw new IllegalArgumentException("Phone/mobile number must contain exactly 10 digits.");
         tx(c->{execute(c,database.postgres()?"INSERT INTO supplier_contacts(name,contact,email,phone,address) VALUES(?,?,?,?,?) ON CONFLICT(name) DO UPDATE SET contact=EXCLUDED.contact,email=EXCLUDED.email,phone=EXCLUDED.phone,address=EXCLUDED.address":"MERGE INTO supplier_contacts KEY(name) VALUES(?,?,?,?,?)",supplier,contact.strip(),email.strip(),phone.strip(),address.strip());return null;});
     }
     public void editOffer(User actor,UUID id,BigDecimal cost,int lead,int minimum) {

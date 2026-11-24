@@ -269,3 +269,34 @@ function updateIssueType() {
 }
 issueType?.addEventListener('change', updateIssueType);
 updateIssueType();
+
+// Validate contact values while typing as well as on submission. Optional fields
+// stay optional; a supplied phone/mobile must be exactly ten ASCII digits.
+for (const field of document.querySelectorAll('input[data-contact-kind]')) {
+    const error = document.createElement('small');
+    error.id = `${field.id}-error`;
+    error.className = 'contact-error';
+    error.setAttribute('aria-live', 'polite');
+    error.hidden = true;
+    field.parentElement.append(error);
+    field.setAttribute('aria-describedby', error.id);
+    function validateContact() {
+        let message = '';
+        if (field.dataset.contactKind === 'phone') {
+            field.value = field.value.replace(/[^0-9]/g, '').slice(0, 10);
+            if (field.value && !/^[0-9]{10}$/.test(field.value)) message = 'Enter exactly 10 digits.';
+        } else if (field.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(field.value)) {
+            message = 'Enter a valid email address, such as name@example.com.';
+        }
+        field.setCustomValidity(message);
+        field.setAttribute('aria-invalid', String(Boolean(message)));
+        error.textContent = message;
+        error.hidden = !message;
+    }
+    field.addEventListener('input', validateContact);
+    field.addEventListener('change', validateContact);
+    field.form?.addEventListener('submit', event => {
+        validateContact();
+        if (!field.checkValidity()) { event.preventDefault(); field.reportValidity(); }
+    });
+}

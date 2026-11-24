@@ -33,15 +33,7 @@ final class OperationsPage {
         var dashboard = operations.dashboard(actor, from, to);
         var report = dashboard.analytics();
         var snapshot = dashboard.snapshot();
-        StringBuilder out = new StringBuilder(ManagementDashboard.render(report,snapshot,business==null?java.util.List.of():business.invoices(actor),operations.today()));
-        if(actor.role()==com.inventory.security.Role.ADMIN) {
-            String dashboardHtml=out.toString().replaceAll("<a[^>]*href=['\"]#new-sale['\"][^>]*>.*?</a>", "");
-            out.setLength(0);out.append(dashboardHtml);
-        }
-        if(actor.role()==com.inventory.security.Role.MANAGER) {
-            String dashboardHtml=out.toString().replaceAll("<a[^>]*href=['\"]#add-product['\"][^>]*>.*?</a>", "");
-            out.setLength(0);out.append(dashboardHtml);
-        }
+        StringBuilder out = new StringBuilder(ManagementDashboard.render(actor,report,snapshot,business==null?java.util.List.of():business.invoices(actor),operations.today()));
         out.append("<section id='analytics' data-view='analytics' class='panel ops-panel workspace-view'><div class='panel-title'><h2>Sales &amp; inventory analytics</h2><p>Recorded unit movements in ")
                 .append(report.zone()).append(". Current stock value uses today's selling prices, not acquisition cost.</p></div>");
         out.append("<form class='date-filter' method='get' action='/app#analytics'>")

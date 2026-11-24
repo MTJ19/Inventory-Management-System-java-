@@ -97,6 +97,20 @@ class BusinessServiceTest {
         }
     }
     boolean trySale(){try{sale(7);return true;}catch(InventoryException e){return false;}}
+    @Test void supplierContactsRequireTenDigitPhonesAndValidEmails() {
+        for(String invalid:List.of("123456789", "12345678901", "98765abc10", "+919876543210", "98765 43210", "98765-43210")) {
+            assertThrows(IllegalArgumentException.class,()->business.supplier(manager,"Invalid phone","Contact","contact@example.com",invalid,""));
+        }
+        for(String invalid:List.of("vbemvbeb", "missing-at.example.com", "@example.com", "name@", "a@@example.com", "name@example")) {
+            assertThrows(IllegalArgumentException.class,()->business.supplier(manager,"Invalid email","Contact",invalid,"9876543210",""));
+        }
+        assertTrue(business.suppliers(manager).isEmpty());
+        business.supplier(manager,"Valid supplier","Contact","contact@example.com","0123456789","");
+        assertEquals("0123456789",business.suppliers(manager).getFirst().get("phone"));
+        business.supplier(manager,"Optional contacts","Contact","","","");
+        assertEquals(2,business.suppliers(manager).size());
+    }
+
     @Test void supplierQuoteEditsPreserveOrderPriceAndPurchaseBatchRollsBack() {
         var ops=inventory.operations(); UUID a=UUID.randomUUID(),b=UUID.randomUUID();
         ops.addOffer(manager,new SupplierOffer(a,"A","Supplier",new BigDecimal("50"),2,1));

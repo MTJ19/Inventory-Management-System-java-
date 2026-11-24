@@ -1,6 +1,8 @@
 package com.inventory.preview;
 
 import com.inventory.model.*;
+import com.inventory.security.User;
+import com.inventory.security.Role;
 import com.inventory.model.procurement.OrderStatus;
 import com.inventory.service.analytics.AnalyticsReport;
 import java.math.BigDecimal;
@@ -16,7 +18,7 @@ final class ManagementDashboard {
     private static final String ALERT="m12 3 10 18H2zM12 9v5M12 17h.01";
     private static final String[] COLORS={"#d9ff57","#b4c477","#87945a","#65704b","#dedfd1","#9b9e89"};
     private ManagementDashboard() { }
-    static String render(AnalyticsReport report,InventorySnapshot snapshot,List<Map<String,String>> invoices,LocalDate today) {
+    static String render(User actor, AnalyticsReport report,InventorySnapshot snapshot,List<Map<String,String>> invoices,LocalDate today) {
         long active=report.products().stream().filter(p->p.stock().product().active()).count();
         long units=report.products().stream().mapToLong(p->p.stock().quantity()).sum();
         long low=report.products().stream().filter(p->p.stock().isLowStock()).count();
@@ -31,11 +33,18 @@ final class ManagementDashboard {
         }
         BigDecimal purchases=snapshot.orders().stream().filter(o->o.status().isOpen()).map(o->o.unitCost().multiply(BigDecimal.valueOf(o.outstanding()))).reduce(BigDecimal.ZERO,BigDecimal::add);
         StringBuilder out=new StringBuilder("<section id='dashboard' data-view='dashboard' class='workspace-view management-dashboard'><div class='dashboard-heading'><div><h1>Dashboard</h1><p>Your electronics inventory, sales and purchasing overview.</p></div></div>");
-        out.append("<section class='panel quick-actions'><h2>Quick actions</h2><div class='quick-action-grid'>")
-            .append(action("new-sale","New sale",CART)).append(action("add-product","Add product",BOX))
-            .append(action("purchase-batches","Create order",ORDER)).append(action("supplier-directory","Add supplier","M3 21V7l9-4 9 4v14M7 10h10M7 15h10"))
-            .append(action("purchase-orders","Receive delivery","M3 7h12v11H3zM15 11h4l3 4v3h-7M7 21h.01M18 21h.01"))
-            .append(action("replenishment","Stock alerts",ALERT)).append("</div></section><div class='dashboard-metrics'>")
+        out.append("<section class='panel quick-actions'><h2>Quick actions</h2><div class='quick-action-grid'>");
+        out.append(action("management","Inventory",BOX));
+        if (actor.role() == Role.ADMIN) {
+            out.append(action("add-product","Add product",BOX))
+                .append(action("purchase-batches","Create order",ORDER))
+                .append(action("supplier-directory","Add supplier","M3 21V7l9-4 9 4v14M7 10h10M7 15h10"))
+                .append(action("purchase-orders","Receive delivery","M3 7h12v11H3zM15 11h4l3 4v3h-7M7 21h.01M18 21h.01"));
+        } else if (actor.role() == Role.MANAGER) {
+            out.append(action("new-sale","New sale",CART));
+        }
+        out.append(action("replenishment","Stock alerts",ALERT))
+            .append("</div></section><div class='dashboard-metrics'>")
             .append(metric("Today's billed sales",money(todayBilled),"Invoices issued today","sales",CART,false))
             .append(metric("Billed sales",money(billed),"Selected period · before refunds","sales",CART,false))
             .append(metric("Open purchase value",money(purchases),"Outstanding units on open orders","purchase-batches",ORDER,false))

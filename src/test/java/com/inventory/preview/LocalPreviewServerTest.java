@@ -280,6 +280,36 @@ class LocalPreviewServerTest {
     }
 
     @Test
+    void dashboardQuickActionsFollowTheRoleWorkspace() throws Exception {
+        String managerPage = get("/app").body();
+        String managerActions = quickActions(managerPage);
+        assertTrue(managerActions.contains("Inventory"));
+        assertTrue(managerActions.contains("New sale"));
+        assertTrue(managerActions.contains("Stock alerts"));
+        assertFalse(managerActions.contains("Add product"));
+        assertFalse(managerActions.contains("Create order"));
+        assertFalse(managerActions.contains("Add supplier"));
+        assertFalse(managerActions.contains("Receive delivery"));
+        server.close();
+        var admin = new com.inventory.security.User(UUID.randomUUID(), "admin", com.inventory.security.Role.ADMIN, true);
+        server = new LocalPreviewServer(inventory, admin, 0);
+        server.start();
+        String adminActions = quickActions(get("/app").body());
+        assertTrue(adminActions.contains("Inventory"));
+        assertTrue(adminActions.contains("Add product"));
+        assertTrue(adminActions.contains("Create order"));
+        assertTrue(adminActions.contains("Add supplier"));
+        assertTrue(adminActions.contains("Receive delivery"));
+        assertFalse(adminActions.contains("New sale"));
+    }
+
+    private String quickActions(String page) {
+        int start = page.indexOf("<div class='quick-action-grid'>");
+        assertTrue(start >= 0);
+        return page.substring(start, page.indexOf("</div></section>", start));
+    }
+
+    @Test
     void dashboardAssetsLoadLocallyWithoutExposingArbitraryFiles() throws Exception {
         var css = get("/assets/dashboard.css");
         assertEquals(200, css.statusCode());

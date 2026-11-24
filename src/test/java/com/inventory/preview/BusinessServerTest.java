@@ -36,6 +36,18 @@ class BusinessServerTest {
         return client.send(HttpRequest.newBuilder(URI.create("http://localhost:"+server.port()+path)).header("Content-Type","application/x-www-form-urlencoded").POST(HttpRequest.BodyPublishers.ofString(body)).build(),HttpResponse.BodyHandlers.ofString());
     }
     String csrf()throws Exception {var m=Pattern.compile("name='csrf' value='([^']+)'").matcher(get("/app").body());assertTrue(m.find());return m.group(1);}
+    @Test void supplierFormAndServerRejectInvalidContactValues() throws Exception {
+        String page=get("/app").body();
+        assertTrue(page.contains("minlength='10' maxlength='10' pattern='[0-9]{10}'"));
+        assertTrue(page.contains("type='email'"));
+        String token=csrf();
+        assertEquals(422,post("/business/supplier",Map.of("csrf",token,"requestId",UUID.randomUUID().toString(),"name","Bad phone","email","contact@example.com","phone","12345678901")).statusCode());
+        assertEquals(422,post("/business/supplier",Map.of("csrf",token,"requestId",UUID.randomUUID().toString(),"name","Bad email","email","vbemvbeb","phone","9876543210")).statusCode());
+        assertTrue(inventory.business().suppliers(manager).isEmpty());
+        assertEquals(303,post("/business/supplier",Map.of("csrf",token,"requestId",UUID.randomUUID().toString(),"name","Valid supplier","email","contact@example.com","phone","9876543210")).statusCode());
+        assertEquals("9876543210",inventory.business().suppliers(manager).getFirst().get("phone"));
+    }
+
     @Test void staffOnlySeesElectronicsInCatalogueAndSaleChoices() throws Exception {
         inventory.addProduct(manager,new Product("PEN","Blue pen","Stationery",new BigDecimal("10"),1,true));
         server.close();

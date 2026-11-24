@@ -94,7 +94,7 @@ final class BusinessPage {
             out.append(section("supplier-directory","Supplier directory","Contact records and current quotes. Existing orders retain their agreed prices."));
             out.append("<section class='panel'><h3>Add or update supplier</h3>").append(form("supplier",csrf)).append("<div class='form-grid'>")
                 .append(input("Supplier name (use the existing name to update)","name","text","","maxlength='255'"))
-                .append(optional("Contact person","contact",255)).append(optional("Email","email",255)).append(optional("Phone","phone",60)).append(optional("Address","address",1000))
+                .append(optional("Contact person","contact",255)).append(optional("Email","email",255)).append(optional("Phone / mobile","phone",10)).append(optional("Address","address",1000))
                 .append("</div><button>Save supplier</button></form></section><section class='panel'><h3>Contacts</h3><div class='table-wrap'><table><thead><tr><th>Supplier</th><th>Contact</th><th>Email</th><th>Phone</th><th>Address</th></tr></thead><tbody>");
             for(var supplier:service.suppliers(actor)) { out.append("<tr>");for(String key:List.of("name","contact","email","phone","address")) out.append("<td>").append(html(supplier.get(key))).append("</td>");out.append("</tr>"); }
             out.append("</tbody></table></div></section><section class='panel'><h3>Edit quote</h3>").append(form("quote",csrf)).append("<label>Supplier quote<select name='offerId' required>");
@@ -168,5 +168,14 @@ final class BusinessPage {
     private static String product(String options) {return "<label>Product<select name='sku' required>"+options+"</select></label>";}
     private static String hidden(String name,String value) {return "<input type='hidden' name='"+name+"' value='"+html(value)+"'>";}
     private static String input(String label,String name,String type,String value,String attrs) {if(type.equals("number")) return NumericFields.render(label,name,value,attrs);return "<label>"+label+"<input required name='"+name+"' type='"+type+"' value='"+html(value)+"' "+attrs+"></label>";}
-    private static String optional(String label,String name,int max) {return "<label>"+label+"<input name='"+name+"' type='"+(name.equals("email")?"email":name.equals("phone")?"tel":"text")+"' maxlength='"+max+"'></label>";}
+    private static String optional(String label,String name,int max) {
+        String attrs = name.equals("phone")
+                ? " type='tel' minlength='10' maxlength='10' pattern='[0-9]{10}' inputmode='numeric' autocomplete='tel-national' data-contact-kind='phone' title='Enter exactly 10 digits'"
+                : name.equals("email")
+                ? " type='email' maxlength='255' pattern='[^@ ]+@[^@ ]+[.][^@ ]+' autocomplete='email' data-contact-kind='email' title='Enter a valid email address containing @ and a domain'"
+                : " type='text' maxlength='"+max+"'";
+        return "<label>"+label+"<input id='supplier-"+name+"' name='"+name+"'"+attrs+">"
+                +(name.equals("phone") ? "<small class='field-hint'>Exactly 10 digits, without spaces or country code.</small>" : "")+"</label>";
+    }
+
 }

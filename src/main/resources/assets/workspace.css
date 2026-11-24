@@ -445,3 +445,6 @@
 
 .workspace .cart-panel .sale-line button {margin-top:0;}
 @media print {.workspace .invoice-document .lime-link {display:none!important;}}
+
+.workspace .contact-error { display:block; color:#efaa91; font-size:12px; line-height:1.5; margin-top:6px; }
+.workspace input[data-contact-kind][aria-invalid='true'] { border-color:#d88c70; }
